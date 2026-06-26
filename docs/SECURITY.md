@@ -390,4 +390,41 @@ This document should be updated whenever:
 - Best practices change
 - New threats are identified
 
+## Payments and Ads Security
+
+### Stripe Integration
+
+**Payment Security:**
+- All payments processed via Stripe (PCI DSS compliant)
+- Webhook signature verification required
+- Event deduplication prevents double-processing
+- HTTPS required in production
+- Rate limiting: 10 deposits/min, 5 payouts/hour
+
+**Payout Security:**
+- Balance deducted immediately upon request
+- Admin review required for processing
+- Minimum/maximum limits enforced
+- User authentication required
+- CSRF protection on all endpoints
+
+### Mondiad Ads
+
+**Ad Security:**
+- Daily limit: 50 ads per user (prevents abuse)
+- Minimum watch time enforcement
+- Impression tracking and validation
+- Rate limiting: 30 requests/minute
+- User authentication required
+- Reward only on completion
+
+**Abuse Prevention:**
+- Watch time validation
+- Completion rate tracking
+- Daily limits per user
+- IP-based rate limiting
+- Event deduplication
+
+For detailed payment and ads documentation, see [PAYMENTS_AND_ADS.md](./PAYMENTS_AND_ADS.md).
+
 Last Updated: 2026-06-26

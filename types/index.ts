@@ -108,6 +108,64 @@ export interface RealMoneyLedger {
   updatedAt: Date;
 }
 
+// ---- Payments (Stripe) ----
+export type PaymentStatus = "pending" | "processing" | "succeeded" | "failed" | "canceled";
+export type PaymentMethod = "card" | "bank_transfer" | "wallet";
+
+export interface Payment {
+  id: string;
+  userId: string;
+  stripePaymentIntentId: string;
+  amount: number; // in cents
+  currency: string;
+  status: PaymentStatus;
+  method: PaymentMethod;
+  description?: string;
+  metadata?: Record<string, string>;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Payout {
+  id: string;
+  userId: string;
+  stripePayoutId?: string;
+  amount: number; // in cents
+  currency: string;
+  status: PaymentStatus;
+  method: PaymentMethod;
+  destination?: string; // bank account or card ID
+  description?: string;
+  metadata?: Record<string, string>;
+  createdAt: Date;
+  processedAt?: Date;
+}
+
+// ---- Ads (Mondiad) ----
+export type AdType = "video" | "banner" | "interstitial";
+export type AdStatus = "pending" | "served" | "completed" | "skipped" | "error";
+
+export interface AdImpression {
+  id: string;
+  userId: string;
+  adId: string;
+  adType: AdType;
+  status: AdStatus;
+  duration?: number; // seconds watched
+  reward?: number; // virtual currency earned
+  metadata?: Record<string, string>;
+  createdAt: Date;
+  completedAt?: Date;
+}
+
+export interface AdConfig {
+  zoneId: string;
+  type: AdType;
+  rewardAmount: number;
+  minDuration?: number; // minimum watch time for reward
+  enabled: boolean;
+}
+
 // ---- Tournaments ----
 export type TournamentPhase = "registration" | "active" | "finished";
 export type TournamentMode = "solo" | "team";
