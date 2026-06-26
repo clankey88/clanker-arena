@@ -6,7 +6,45 @@ This document outlines the security measures implemented in Clanker Arena to pro
 
 ## Authentication System (TICKET T-005)
 
-### Password Security
+### OAuth Providers
+
+Clanker Arena supports multiple OAuth providers for seamless authentication:
+
+- **Google** - OAuth 2.0
+- **Facebook** - OAuth 2.0
+- **Discord** - OAuth 2.0
+- **Twitch** - OAuth 2.0
+
+**OAuth Flow:**
+1. User clicks "Login with [Provider]" button
+2. User is redirected to provider's authorization page
+3. After authorization, provider redirects back with authorization code
+4. Server exchanges code for access token
+5. Server fetches user info from provider
+6. User account is created or linked
+7. Session is created and user is logged in
+
+**Security Features:**
+- State parameter with nonce for CSRF protection
+- Secure cookie storage for OAuth state
+- Automatic account linking via email
+- Support for multiple OAuth accounts per user
+
+**Configuration:**
+Set environment variables for each provider:
+```
+GOOGLE_CLIENT_ID=your_client_id
+GOOGLE_CLIENT_SECRET=your_client_secret
+FACEBOOK_CLIENT_ID=your_client_id
+FACEBOOK_CLIENT_SECRET=your_client_secret
+DISCORD_CLIENT_ID=your_client_id
+DISCORD_CLIENT_SECRET=your_client_secret
+TWITCH_CLIENT_ID=your_client_id
+TWITCH_CLIENT_SECRET=your_client_secret
+APP_URL=https://your-domain.com
+```
+
+### Password Security (Local Authentication)
 
 - **Hashing Algorithm**: PBKDF2 with SHA-256
 - **Iterations**: 100,000 (industry standard for PBKDF2)
@@ -227,6 +265,58 @@ catch (error) {
 - [ ] Authorization checks for resource access?
 - [ ] Logging for audit trail?
 
+## OAuth API Endpoints
+
+### Initiate OAuth Flow
+```
+GET /api/auth/oauth/[provider]?returnTo=/dashboard
+```
+Redirects user to OAuth provider's authorization page.
+
+**Providers:** `google`, `facebook`, `discord`, `twitch`
+
+**Query Parameters:**
+- `returnTo` (optional): URL to redirect after successful authentication
+
+### OAuth Callback
+```
+GET /api/auth/callback/[provider]?code=...&state=...
+```
+Handles OAuth callback from provider. Automatically creates/links user account and establishes session.
+
+**Response:** Redirects to `returnTo` URL or home page
+
+## User Model with OAuth
+
+```typescript
+interface User {
+  id: string;
+  username: string;
+  passwordHash?: string; // Optional for OAuth-only users
+  email?: string;
+  avatarUrl?: string;
+  oauthAccounts: OAuthAccount[];
+  balance: number;
+  createdAt: Date;
+}
+
+interface OAuthAccount {
+  provider: "google" | "facebook" | "discord" | "twitch";
+  providerId: string;
+  email?: string;
+  displayName?: string;
+  avatarUrl?: string;
+}
+```
+
+## Account Linking
+
+Users can link multiple OAuth providers to a single account:
+
+1. **Email-based linking**: If an OAuth account uses an email that matches an existing user, the OAuth account is automatically linked
+2. **Multiple providers**: Users can have both local password authentication and multiple OAuth providers
+3. **Primary authentication**: Users can choose their preferred login method
+
 ## Known Limitations & TODOs
 
 1. **Admin Role System**: Currently uses hardcoded user IDs. Should be replaced with database-backed role system.
@@ -235,6 +325,8 @@ catch (error) {
 4. **2FA**: Two-factor authentication not yet implemented.
 5. **Password Reset**: Secure password reset flow not yet implemented.
 6. **Account Lockout**: Automatic lockout after failed login attempts not yet implemented.
+7. **OAuth Token Refresh**: Access token refresh not yet implemented (sessions handle re-authentication).
+8. **Account Unlinking**: UI for unlinking OAuth providers not yet implemented.
 
 ## Incident Response
 

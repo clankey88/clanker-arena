@@ -9,10 +9,23 @@ export interface Stats {
   movement: number;
 }
 
+export type OAuthProvider = "google" | "facebook" | "discord" | "twitch" | "local";
+
+export interface OAuthAccount {
+  provider: OAuthProvider;
+  providerId: string;
+  email?: string;
+  displayName?: string;
+  avatarUrl?: string;
+}
+
 export interface User {
   id: string;
   username: string;
-  passwordHash: string;
+  passwordHash?: string; // Optional for OAuth-only users
+  email?: string;
+  avatarUrl?: string;
+  oauthAccounts: OAuthAccount[];
   balance: number;
   createdAt: Date;
 }

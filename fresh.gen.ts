@@ -5,9 +5,11 @@
 import * as $_404 from "./routes/_404.tsx";
 import * as $_app from "./routes/_app.tsx";
 import * as $api_admin_balance from "./routes/api/admin/balance.ts";
+import * as $api_auth_callback_provider_ from "./routes/api/auth/callback/[provider].ts";
 import * as $api_auth_login from "./routes/api/auth/login.ts";
 import * as $api_auth_logout from "./routes/api/auth/logout.ts";
 import * as $api_auth_me from "./routes/api/auth/me.ts";
+import * as $api_auth_oauth_provider_ from "./routes/api/auth/oauth/[provider].ts";
 import * as $api_auth_register from "./routes/api/auth/register.ts";
 import * as $api_economy_balance from "./routes/api/economy/balance.ts";
 import * as $api_economy_daily from "./routes/api/economy/daily.ts";
@@ -40,9 +42,11 @@ const manifest = {
     "./routes/_404.tsx": $_404,
     "./routes/_app.tsx": $_app,
     "./routes/api/admin/balance.ts": $api_admin_balance,
+    "./routes/api/auth/callback/[provider].ts": $api_auth_callback_provider_,
     "./routes/api/auth/login.ts": $api_auth_login,
     "./routes/api/auth/logout.ts": $api_auth_logout,
     "./routes/api/auth/me.ts": $api_auth_me,
+    "./routes/api/auth/oauth/[provider].ts": $api_auth_oauth_provider_,
     "./routes/api/auth/register.ts": $api_auth_register,
     "./routes/api/economy/balance.ts": $api_economy_balance,
     "./routes/api/economy/daily.ts": $api_economy_daily,
