@@ -394,19 +394,22 @@ This document should be updated whenever:
 
 ### Stripe Integration
 
-**Payment Security:**
+**Shop Purchase Security:**
 - All payments processed via Stripe (PCI DSS compliant)
+- Fixed item prices (no arbitrary amounts)
 - Webhook signature verification required
 - Event deduplication prevents double-processing
 - HTTPS required in production
-- Rate limiting: 10 deposits/min, 5 payouts/hour
+- Rate limiting: 20 purchases/min
+- Users can only buy from shop (no direct deposits)
 
 **Payout Security:**
 - Balance deducted immediately upon request
 - Admin review required for processing
-- Minimum/maximum limits enforced
+- Minimum/maximum limits enforced ($10-$10,000)
 - User authentication required
 - CSRF protection on all endpoints
+- Rate limiting: 5 payouts/hour
 
 ### Mondiad Ads
 

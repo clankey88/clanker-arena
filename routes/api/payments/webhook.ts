@@ -36,8 +36,9 @@ export const handler: Handlers = {
         case "payment_intent.succeeded": {
           const paymentIntent = event.data.object;
           const userId = paymentIntent.metadata.userId;
+          const type = paymentIntent.metadata.type;
           
-          if (userId) {
+          if (userId && type === "shop_purchase") {
             // Update payment status
             await updatePaymentStatus(
               paymentIntent.id,
@@ -45,15 +46,21 @@ export const handler: Handlers = {
               paymentIntent.id
             );
             
-            // Add balance to user (convert cents to virtual currency)
-            await addBalance(
-              userId,
-              paymentIntent.amount,
-              "admin_grant",
-              `Deposit via Stripe: ${paymentIntent.id}`
-            );
+            // Grant credits from shop purchase
+            const credits = parseInt(paymentIntent.metadata.credits || "0");
+            if (credits > 0) {
+              await addBalance(
+                userId,
+                credits,
+                "admin_grant",
+                `Shop purchase: ${paymentIntent.metadata.itemId || paymentIntent.id}`
+              );
+            }
             
-            console.log(`Payment succeeded for user ${userId}: ${paymentIntent.amount} cents`);
+            // TODO: Grant items (cards, etc.) based on metadata.items
+            // This would require implementing an inventory system
+            
+            console.log(`Shop purchase succeeded for user ${userId}: ${credits} credits`);
           }
           break;
         }

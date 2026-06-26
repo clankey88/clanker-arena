@@ -8,6 +8,8 @@ Use this prompt as the **prefix** for every image generation to maintain consist
 > Painted fantasy-sports aesthetic — warm saturated colors, thick painterly brushwork, soft rim lighting. Mix of arcade-energy (like Pixar sports movies) + classic fantasy illustration (rounded shapes, hand-painted textures, soft shadows). Zero neon, zero chrome, zero holograms, zero tech grids. Everything looks like it's made of stone, wood, leather, canvas, and warm metals (brass, copper, gold). Rich sienna, deep indigo, warm gold, emerald, terracotta, cream — slightly desaturated like an old sports poster. Hand-lettered feel, vintage fight-poster energy. No cyberpunk, no sci-fi.
 >
 > **Reference image:** (use the last generated image as visual anchor for colors, brush style, and lighting)
+>
+> **DO NOT include:** cyberpunk, neon, chrome, holograms, tech grids, glitch effects, sci-fi elements, futuristic UI, angular tech shapes, dark edgy filters.
 
 ---
 

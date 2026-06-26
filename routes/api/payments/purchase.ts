@@ -1,14 +1,66 @@
-// Stripe deposit/payment endpoint
+// Stripe shop purchase endpoint (replaces deposit)
 import { Handlers } from "$fresh/server.ts";
-import { stripe, isStripeConfigured, validateDepositAmount, STRIPE_CONFIG } from "../../../lib/payments/stripe.ts";
+import { stripe, isStripeConfigured, STRIPE_CONFIG } from "../../../lib/payments/stripe.ts";
 import { createPayment } from "../../../lib/payments/models.ts";
 import { requireAuth, validateCSRFToken, rateLimit, AuthState } from "../../../lib/security/middleware.ts";
 import { Payment } from "../../../types/index.ts";
 
+// Shop items configuration
+export const SHOP_ITEMS = {
+  starter_pack: {
+    id: "starter_pack",
+    name: "Starter Pack",
+    description: "1000 credits + 5 common cards",
+    price: 499, // $4.99
+    credits: 1000,
+    items: ["5x common cards"],
+  },
+  premium_pack: {
+    id: "premium_pack",
+    name: "Premium Pack",
+    description: "5000 credits + 10 rare cards",
+    price: 1999, // $19.99
+    credits: 5000,
+    items: ["10x rare cards"],
+  },
+  mega_pack: {
+    id: "mega_pack",
+    name: "Mega Pack",
+    description: "25000 credits + 5 epic cards + 1 legendary",
+    price: 9999, // $99.99
+    credits: 25000,
+    items: ["5x epic cards", "1x legendary card"],
+  },
+  credits_small: {
+    id: "credits_small",
+    name: "Small Credit Pack",
+    description: "1000 credits",
+    price: 499, // $4.99
+    credits: 1000,
+    items: [],
+  },
+  credits_medium: {
+    id: "credits_medium",
+    name: "Medium Credit Pack",
+    description: "5000 credits",
+    price: 1999, // $19.99
+    credits: 5000,
+    items: [],
+  },
+  credits_large: {
+    id: "credits_large",
+    name: "Large Credit Pack",
+    description: "15000 credits",
+    price: 4999, // $49.99
+    credits: 15000,
+    items: [],
+  },
+};
+
 export const handler: Handlers<AuthState> = {
   async POST(req, ctx) {
-    // Apply rate limiting (10 requests per minute)
-    const rateLimitResponse = await rateLimit(10, 60000)(req, ctx);
+    // Apply rate limiting (20 requests per minute)
+    const rateLimitResponse = await rateLimit(20, 60000)(req, ctx);
     if (rateLimitResponse.status === 429) {
       return rateLimitResponse;
     }
@@ -40,33 +92,29 @@ export const handler: Handlers<AuthState> = {
     
     try {
       const body = await req.json();
-      const { amount, description } = body;
+      const { itemId } = body;
       
-      // Validate amount
-      if (typeof amount !== "number" || amount <= 0) {
+      // Validate item
+      if (!itemId || !SHOP_ITEMS[itemId as keyof typeof SHOP_ITEMS]) {
         return Response.json(
-          { ok: false, error: "Invalid amount" },
+          { ok: false, error: "Invalid item" },
           { status: 400 }
         );
       }
       
-      const validation = validateDepositAmount(amount);
-      if (!validation.valid) {
-        return Response.json(
-          { ok: false, error: validation.error },
-          { status: 400 }
-        );
-      }
+      const item = SHOP_ITEMS[itemId as keyof typeof SHOP_ITEMS];
       
       // Create Stripe Payment Intent
       const paymentIntent = await stripe!.paymentIntents.create({
-        amount,
+        amount: item.price,
         currency: STRIPE_CONFIG.currency,
         metadata: {
           userId,
-          type: "deposit",
+          type: "shop_purchase",
+          itemId: item.id,
+          credits: item.credits.toString(),
         },
-        description: description || "Clanker Arena deposit",
+        description: `${item.name} - ${item.description}`,
         automatic_payment_methods: {
           enabled: true,
         },
@@ -77,13 +125,16 @@ export const handler: Handlers<AuthState> = {
         id: crypto.randomUUID(),
         userId,
         stripePaymentIntentId: paymentIntent.id,
-        amount,
+        amount: item.price,
         currency: STRIPE_CONFIG.currency,
         status: "pending",
         method: "card",
-        description,
+        description: `Shop purchase: ${item.name}`,
         metadata: {
           clientSecret: paymentIntent.client_secret || "",
+          itemId: item.id,
+          credits: item.credits.toString(),
+          items: JSON.stringify(item.items),
         },
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -101,12 +152,18 @@ export const handler: Handlers<AuthState> = {
         ok: true,
         paymentId: payment.id,
         clientSecret: paymentIntent.client_secret,
-        amount: payment.amount,
+        item: {
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          price: item.price,
+          credits: item.credits,
+        },
       });
     } catch (error) {
-      console.error("Deposit error:", error);
+      console.error("Shop purchase error:", error);
       return Response.json(
-        { ok: false, error: "Failed to create payment" },
+        { ok: false, error: "Failed to create purchase" },
         { status: 500 }
       );
     }

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Clanker Arena integrates Stripe for payments/payouts and Mondiad for video advertising to provide a complete monetization system.
+Clanker Arena integrates Stripe for shop purchases/payouts and Mondiad for video advertising to provide a complete monetization system.
 
 ---
 
@@ -17,20 +17,35 @@ STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 ```
 
-### Deposit Flow
+### Shop Purchase Flow
 
-1. User initiates deposit via `/api/payments/deposit`
-2. Server creates Stripe Payment Intent
-3. Client completes payment using Stripe Elements
-4. Webhook confirms payment success
-5. User balance is automatically credited
+Users can purchase items from the in-game shop (credits, card packs, etc.) but cannot directly deposit money.
+
+1. User selects item from shop
+2. User initiates purchase via `/api/payments/purchase`
+3. Server creates Stripe Payment Intent
+4. Client completes payment using Stripe Elements
+5. Webhook confirms payment success
+6. Credits and items are automatically granted
+
+**Available Shop Items:**
+
+| Item | Price | Credits | Bonus Items |
+|------|-------|---------|-------------|
+| Starter Pack | $4.99 | 1,000 | 5 common cards |
+| Premium Pack | $19.99 | 5,000 | 10 rare cards |
+| Mega Pack | $99.99 | 25,000 | 5 epic + 1 legendary |
+| Small Credits | $4.99 | 1,000 | - |
+| Medium Credits | $19.99 | 5,000 | - |
+| Large Credits | $49.99 | 15,000 | - |
 
 **Limits:**
-- Minimum deposit: $5.00 (500 cents)
-- Maximum deposit: $1,000.00 (100,000 cents)
-- Rate limit: 10 requests per minute
+- Rate limit: 20 requests per minute
+- No minimum/maximum (item prices are fixed)
 
-### Payout Flow
+### Payout/Withdrawal Flow
+
+Users can withdraw their winnings to real money.
 
 1. User requests payout via `/api/payments/payout`
 2. Balance is immediately deducted
@@ -45,16 +60,15 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 
 ### API Endpoints
 
-#### Create Deposit
+#### Shop Purchase
 ```
-POST /api/payments/deposit
+POST /api/payments/purchase
 Authorization: Required
 CSRF Token: Required
 
 Request:
 {
-  "amount": 1000,  // cents
-  "description": "Add funds"
+  "itemId": "premium_pack"
 }
 
 Response:
@@ -62,7 +76,13 @@ Response:
   "ok": true,
   "paymentId": "uuid",
   "clientSecret": "pi_xxx_secret_xxx",
-  "amount": 1000
+  "item": {
+    "id": "premium_pack",
+    "name": "Premium Pack",
+    "description": "5000 credits + 10 rare cards",
+    "price": 1999,
+    "credits": 5000
+  }
 }
 ```
 
@@ -95,7 +115,7 @@ POST /api/payments/webhook
 Stripe-Signature: Required
 
 Handles:
-- payment_intent.succeeded
+- payment_intent.succeeded (grants credits and items)
 - payment_intent.payment_failed
 - payment_intent.canceled
 - payment_intent.processing
@@ -315,7 +335,7 @@ Contact Mondiad support for test zone IDs and API credentials.
 - [ ] Set production Stripe keys
 - [ ] Configure Stripe webhook endpoint
 - [ ] Set production Mondiad credentials
-- [ ] Test payment flow end-to-end
+- [ ] Test shop purchase flow end-to-end
 - [ ] Test payout flow with small amount
 - [ ] Verify ad serving and rewards
 - [ ] Monitor webhook delivery
