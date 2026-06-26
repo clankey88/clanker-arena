@@ -23,7 +23,7 @@ export async function createBot(providerId: string, templateId: string, name: st
     templateId,
     name,
     effectiveStats: { ...template.baseStats },
-    upgrades: []
+    weapons: []
   };
   
   await saveBot(bot);

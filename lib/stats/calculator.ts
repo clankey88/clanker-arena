@@ -2,15 +2,15 @@ import { Bot } from "../models/bot/index.ts";
 import { Stats } from "../../types/index.ts";
 import { MatchContext, ActiveEffect } from "./modifiers.ts";
 
-// Helper to calculate upgrade impact.
-// Assuming upgrades are strings like 'combat_+10' or 'vision_*1.2'
-function getUpgradeModifiers(upgrades: string[], stat: keyof Stats): { flat: number; multiplier: number } {
+// Helper to calculate weapon impact.
+// Assuming weapons are strings like 'combat_+10' or 'vision_*1.2'
+function getWeaponModifiers(weapons: string[], stat: keyof Stats): { flat: number; multiplier: number } {
   let flat = 0;
   let multiplier = 1;
 
-  for (const upgrade of upgrades) {
+  for (const weapon of weapons) {
     // Example format expected: "vision_flat_10" or "combat_multiplier_1.5"
-    const parts = upgrade.split("_");
+    const parts = weapon.split("_");
     if (parts.length >= 3 && parts[0] === stat) {
       const type = parts[1];
       const val = parseFloat(parts[2]);
@@ -39,10 +39,10 @@ export function calculateStats(bot: Bot & { baseStats?: Stats }, matchContext?: 
   const statsKeys: (keyof Stats)[] = ["vision", "thinking", "combat", "movement"];
 
   for (const stat of statsKeys) {
-    // 1. Apply upgrades
-    const upgradeMods = getUpgradeModifiers(bot.upgrades || [], stat);
-    let flatMod = upgradeMods.flat;
-    let multMod = upgradeMods.multiplier;
+    // 1. Apply weapons
+    const weaponMods = getWeaponModifiers(bot.weapons || [], stat);
+    let flatMod = weaponMods.flat;
+    let multMod = weaponMods.multiplier;
 
     // 2. Apply active deck effects
     if (matchContext && matchContext.activeEffects) {
