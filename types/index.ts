@@ -12,6 +12,7 @@ export interface Stats {
 export interface User {
   id: string;
   username: string;
+  passwordHash: string;
   balance: number;
   createdAt: Date;
 }

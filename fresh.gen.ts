@@ -4,22 +4,72 @@
 
 import * as $_404 from "./routes/_404.tsx";
 import * as $_app from "./routes/_app.tsx";
+import * as $api_admin_balance from "./routes/api/admin/balance.ts";
+import * as $api_auth_login from "./routes/api/auth/login.ts";
+import * as $api_auth_logout from "./routes/api/auth/logout.ts";
+import * as $api_auth_me from "./routes/api/auth/me.ts";
+import * as $api_auth_register from "./routes/api/auth/register.ts";
+import * as $api_economy_balance from "./routes/api/economy/balance.ts";
+import * as $api_economy_daily from "./routes/api/economy/daily.ts";
+import * as $api_economy_ledger from "./routes/api/economy/ledger.ts";
+import * as $api_economy_transactions from "./routes/api/economy/transactions.ts";
 import * as $api_joke from "./routes/api/joke.ts";
+import * as $api_tournament_id_bracket from "./routes/api/tournament/[id]/bracket.ts";
+import * as $api_tournament_id_index from "./routes/api/tournament/[id]/index.ts";
+import * as $api_tournament_id_team from "./routes/api/tournament/[id]/team.ts";
+import * as $api_tournament_index from "./routes/api/tournament/index.ts";
+import * as $api_ws_match_id_ from "./routes/api/ws/match/[id].ts";
+import * as $arena_id_ from "./routes/arena/[id].tsx";
+import * as $economy_index from "./routes/economy/index.tsx";
 import * as $greet_name_ from "./routes/greet/[name].tsx";
 import * as $index from "./routes/index.tsx";
+import * as $tournament_id_ from "./routes/tournament/[id].tsx";
+import * as $tournament_create from "./routes/tournament/create.tsx";
+import * as $tournament_index from "./routes/tournament/index.tsx";
+import * as $ws_test from "./routes/ws/test.ts";
 import * as $Counter from "./islands/Counter.tsx";
+import * as $arena_viewer from "./islands/arena-viewer.tsx";
+import * as $economy_daily_claim from "./islands/economy/daily-claim.tsx";
+import * as $match_connection from "./islands/match-connection.tsx";
+import * as $tournament_bracket_viewer from "./islands/tournament/bracket-viewer.tsx";
+import * as $tournament_team_manager from "./islands/tournament/team-manager.tsx";
 import type { Manifest } from "$fresh/server.ts";
 
 const manifest = {
   routes: {
     "./routes/_404.tsx": $_404,
     "./routes/_app.tsx": $_app,
+    "./routes/api/admin/balance.ts": $api_admin_balance,
+    "./routes/api/auth/login.ts": $api_auth_login,
+    "./routes/api/auth/logout.ts": $api_auth_logout,
+    "./routes/api/auth/me.ts": $api_auth_me,
+    "./routes/api/auth/register.ts": $api_auth_register,
+    "./routes/api/economy/balance.ts": $api_economy_balance,
+    "./routes/api/economy/daily.ts": $api_economy_daily,
+    "./routes/api/economy/ledger.ts": $api_economy_ledger,
+    "./routes/api/economy/transactions.ts": $api_economy_transactions,
     "./routes/api/joke.ts": $api_joke,
+    "./routes/api/tournament/[id]/bracket.ts": $api_tournament_id_bracket,
+    "./routes/api/tournament/[id]/index.ts": $api_tournament_id_index,
+    "./routes/api/tournament/[id]/team.ts": $api_tournament_id_team,
+    "./routes/api/tournament/index.ts": $api_tournament_index,
+    "./routes/api/ws/match/[id].ts": $api_ws_match_id_,
+    "./routes/arena/[id].tsx": $arena_id_,
+    "./routes/economy/index.tsx": $economy_index,
     "./routes/greet/[name].tsx": $greet_name_,
     "./routes/index.tsx": $index,
+    "./routes/tournament/[id].tsx": $tournament_id_,
+    "./routes/tournament/create.tsx": $tournament_create,
+    "./routes/tournament/index.tsx": $tournament_index,
+    "./routes/ws/test.ts": $ws_test,
   },
   islands: {
     "./islands/Counter.tsx": $Counter,
+    "./islands/arena-viewer.tsx": $arena_viewer,
+    "./islands/economy/daily-claim.tsx": $economy_daily_claim,
+    "./islands/match-connection.tsx": $match_connection,
+    "./islands/tournament/bracket-viewer.tsx": $tournament_bracket_viewer,
+    "./islands/tournament/team-manager.tsx": $tournament_team_manager,
   },
   baseUrl: import.meta.url,
 } satisfies Manifest;

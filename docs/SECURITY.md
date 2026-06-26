@@ -1,0 +1,258 @@
+# Security Documentation - Clanker Arena
+
+## Overview
+
+This document outlines the security measures implemented in Clanker Arena to protect user data, prevent unauthorized access, and ensure secure operations.
+
+## Authentication System (TICKET T-005)
+
+### Password Security
+
+- **Hashing Algorithm**: PBKDF2 with SHA-256
+- **Iterations**: 100,000 (industry standard for PBKDF2)
+- **Salt**: 16 bytes of cryptographically secure random data per password
+- **Hash Length**: 32 bytes
+- **Storage**: Salt + hash combined and base64 encoded
+
+### Password Requirements
+
+- Minimum length: 8 characters
+- Maximum length: 128 characters
+- Must contain at least one number
+- Must contain at least one letter
+
+### Session Management
+
+- **Session ID**: Cryptographically secure UUID
+- **Storage**: Deno KV with automatic expiration
+- **Expiration**: 7 days
+- **Cookie Settings**:
+  - HttpOnly: Yes (prevents XSS access)
+  - SameSite: Strict (prevents CSRF)
+  - Secure: Yes (production only, requires HTTPS)
+  - Path: /
+
+## API Security
+
+### Authentication Middleware
+
+All protected endpoints use the `requireAuth` middleware which:
+1. Validates session cookie
+2. Retrieves user from session
+3. Attaches user to request context
+4. Returns 401 if authentication fails
+
+**Usage:**
+```typescript
+import { requireAuth, AuthState } from "../lib/security/middleware.ts";
+
+export const handler: Handlers<AuthState> = {
+  async GET(req, ctx) {
+    const authResponse = await requireAuth(req, ctx);
+    if (authResponse.status === 401) {
+      return authResponse;
+    }
+    // User is authenticated, access via ctx.state.user
+  }
+};
+```
+
+### Rate Limiting
+
+Rate limiting is implemented to prevent abuse:
+
+- **Auth endpoints**: 20 requests per minute
+- **Balance queries**: 100 requests per minute
+- **Balance modifications**: 20 requests per minute
+- **General API**: Configurable per endpoint
+
+**Implementation:**
+```typescript
+import { rateLimit } from "../lib/security/middleware.ts";
+
+// Apply rate limiting (100 requests per minute)
+const rateLimitResponse = await rateLimit(100, 60000)(req, ctx);
+if (rateLimitResponse.status === 429) {
+  return rateLimitResponse;
+}
+```
+
+### CSRF Protection
+
+Cross-Site Request Forgery protection for state-changing operations:
+
+- **Token Generation**: 32 bytes of cryptographically secure random data
+- **Storage**: Secure cookie + required in request header
+- **Validation**: Required for POST, PUT, DELETE, PATCH requests
+- **Header Name**: `X-CSRF-Token`
+
+**Client-side usage:**
+```javascript
+// Get CSRF token from cookie or login response
+const csrfToken = getCookie('csrf_token');
+
+// Include in request headers
+fetch('/api/endpoint', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-CSRF-Token': csrfToken
+  },
+  body: JSON.stringify(data)
+});
+```
+
+### Input Validation
+
+All user inputs are validated:
+
+1. **Username**:
+   - Length: 3-30 characters
+   - Pattern: Alphanumeric and underscore only
+   - Case-insensitive storage
+
+2. **Amounts**:
+   - Must be positive numbers
+   - Maximum limits enforced (e.g., 1,000,000 for user operations)
+   - Type checking
+
+3. **IDs**:
+   - UUID format validation
+   - Existence checks before operations
+
+## Security Headers
+
+The following security headers are automatically applied to all responses:
+
+- **X-Frame-Options**: DENY (prevents clickjacking)
+- **X-Content-Type-Options**: nosniff (prevents MIME sniffing)
+- **X-XSS-Protection**: 1; mode=block (enables XSS filter)
+- **Referrer-Policy**: strict-origin-when-cross-origin
+- **Content-Security-Policy**: Restricts resource loading
+- **Strict-Transport-Security**: max-age=31536000 (HTTPS only)
+- **Permissions-Policy**: Restricts browser features
+
+## WebSocket Security
+
+WebSocket connections are secured:
+
+1. **Authentication**: Session validation before upgrade
+2. **User Context**: User ID attached to connection
+3. **Message Validation**: All messages are validated
+4. **Authorization**: Actions verified against user permissions
+5. **Error Handling**: Graceful error responses without leaking info
+
+## Admin Endpoints
+
+Admin-only endpoints have additional security:
+
+1. **Role Checking**: Verify admin status before operations
+2. **Audit Logging**: All admin actions should be logged (TODO)
+3. **Higher Limits**: Separate limits for admin operations
+4. **CSRF Protection**: Required for all state changes
+
+**Current Implementation:**
+```typescript
+// TODO: Replace with database-backed role system
+const ADMIN_USER_IDS = new Set([
+  // Add admin user IDs here
+]);
+```
+
+## Best Practices for Developers
+
+### 1. Never Expose Sensitive Data
+
+```typescript
+// ❌ BAD: Exposing password hash
+return Response.json({ user });
+
+// ✅ GOOD: Remove sensitive fields
+const { passwordHash, ...safeUser } = user;
+return Response.json({ user: safeUser });
+```
+
+### 2. Always Validate Input
+
+```typescript
+// ❌ BAD: No validation
+const { amount } = await req.json();
+await addBalance(userId, amount);
+
+// ✅ GOOD: Validate before use
+const { amount } = await req.json();
+if (typeof amount !== "number" || amount <= 0 || amount > 1000000) {
+  return Response.json({ error: "Invalid amount" }, { status: 400 });
+}
+await addBalance(userId, amount);
+```
+
+### 3. Use Middleware Consistently
+
+```typescript
+// ✅ GOOD: Apply all relevant middleware
+const rateLimitResponse = await rateLimit(100, 60000)(req, ctx);
+if (rateLimitResponse.status === 429) return rateLimitResponse;
+
+const authResponse = await requireAuth(req, ctx);
+if (authResponse.status === 401) return authResponse;
+
+const csrfResponse = await validateCSRFToken(req, ctx);
+if (csrfResponse.status === 403) return csrfResponse;
+```
+
+### 4. Handle Errors Securely
+
+```typescript
+// ❌ BAD: Exposing internal errors
+catch (error) {
+  return Response.json({ error: error.message });
+}
+
+// ✅ GOOD: Generic error message, log details
+catch (error) {
+  console.error("Operation failed:", error);
+  return Response.json({ error: "Internal server error" }, { status: 500 });
+}
+```
+
+## Security Checklist for New Endpoints
+
+- [ ] Authentication required? Apply `requireAuth` middleware
+- [ ] Rate limiting needed? Apply `rateLimit` middleware
+- [ ] State-changing operation? Apply `validateCSRFToken` middleware
+- [ ] Input validation implemented?
+- [ ] Sensitive data filtered from responses?
+- [ ] Error handling doesn't leak information?
+- [ ] Authorization checks for resource access?
+- [ ] Logging for audit trail?
+
+## Known Limitations & TODOs
+
+1. **Admin Role System**: Currently uses hardcoded user IDs. Should be replaced with database-backed role system.
+2. **Rate Limiting Storage**: Uses in-memory storage. Should use Deno KV for distributed deployments.
+3. **Audit Logging**: Not yet implemented for admin actions.
+4. **2FA**: Two-factor authentication not yet implemented.
+5. **Password Reset**: Secure password reset flow not yet implemented.
+6. **Account Lockout**: Automatic lockout after failed login attempts not yet implemented.
+
+## Incident Response
+
+If a security issue is discovered:
+
+1. **Assess Impact**: Determine scope and severity
+2. **Contain**: Disable affected endpoints if necessary
+3. **Fix**: Implement and test fix
+4. **Deploy**: Deploy fix to production immediately
+5. **Notify**: Inform affected users if data was compromised
+6. **Document**: Update this document with lessons learned
+
+## Security Updates
+
+This document should be updated whenever:
+- New security features are added
+- Security vulnerabilities are fixed
+- Best practices change
+- New threats are identified
+
+Last Updated: 2026-06-26
