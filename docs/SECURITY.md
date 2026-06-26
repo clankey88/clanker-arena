@@ -14,6 +14,7 @@ Clanker Arena supports multiple OAuth providers for seamless authentication:
 - **Facebook** - OAuth 2.0
 - **Discord** - OAuth 2.0
 - **Twitch** - OAuth 2.0
+- **Telegram** - Widget-based authentication
 
 **OAuth Flow:**
 1. User clicks "Login with [Provider]" button
@@ -41,8 +42,24 @@ DISCORD_CLIENT_ID=your_client_id
 DISCORD_CLIENT_SECRET=your_client_secret
 TWITCH_CLIENT_ID=your_client_id
 TWITCH_CLIENT_SECRET=your_client_secret
+TELEGRAM_BOT_TOKEN=your_bot_token
 APP_URL=https://your-domain.com
 ```
+
+**Telegram Widget Setup:**
+Telegram uses a different authentication flow via the Telegram Login Widget:
+
+1. Create a bot via [@BotFather](https://t.me/botfather)
+2. Set the bot's domain using `/setdomain` command
+3. Add the Telegram Login Widget to your frontend:
+```html
+<script async src="https://telegram.org/js/telegram-widget.js?22" 
+        data-telegram-login="YOUR_BOT_USERNAME" 
+        data-size="large" 
+        data-onauth="onTelegramAuth(user)" 
+        data-request-access="write"></script>
+```
+4. Handle the callback by sending auth data to `/api/auth/callback/telegram`
 
 ### Password Security (Local Authentication)
 
@@ -285,6 +302,32 @@ GET /api/auth/callback/[provider]?code=...&state=...
 Handles OAuth callback from provider. Automatically creates/links user account and establishes session.
 
 **Response:** Redirects to `returnTo` URL or home page
+
+### Telegram Callback
+```
+POST /api/auth/callback/telegram
+```
+Handles Telegram widget authentication. Verifies auth data using HMAC-SHA256 with bot token.
+
+**Request Body:**
+```json
+{
+  "id": 123456789,
+  "first_name": "John",
+  "last_name": "Doe",
+  "username": "johndoe",
+  "photo_url": "https://...",
+  "auth_date": 1234567890,
+  "hash": "abc123..."
+}
+```
+
+**Response:** JSON with user data and session cookies
+
+**Security:**
+- Verifies HMAC-SHA256 signature using bot token
+- Checks auth_date is within 5 minutes
+- No email provided by Telegram (optional field)
 
 ## User Model with OAuth
 

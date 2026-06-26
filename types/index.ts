@@ -9,7 +9,7 @@ export interface Stats {
   movement: number;
 }
 
-export type OAuthProvider = "google" | "facebook" | "discord" | "twitch" | "local";
+export type OAuthProvider = "google" | "facebook" | "discord" | "twitch" | "telegram" | "local";
 
 export interface OAuthAccount {
   provider: OAuthProvider;

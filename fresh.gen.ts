@@ -6,6 +6,7 @@ import * as $_404 from "./routes/_404.tsx";
 import * as $_app from "./routes/_app.tsx";
 import * as $api_admin_balance from "./routes/api/admin/balance.ts";
 import * as $api_auth_callback_provider_ from "./routes/api/auth/callback/[provider].ts";
+import * as $api_auth_callback_telegram from "./routes/api/auth/callback/telegram.ts";
 import * as $api_auth_login from "./routes/api/auth/login.ts";
 import * as $api_auth_logout from "./routes/api/auth/logout.ts";
 import * as $api_auth_me from "./routes/api/auth/me.ts";
@@ -43,6 +44,7 @@ const manifest = {
     "./routes/_app.tsx": $_app,
     "./routes/api/admin/balance.ts": $api_admin_balance,
     "./routes/api/auth/callback/[provider].ts": $api_auth_callback_provider_,
+    "./routes/api/auth/callback/telegram.ts": $api_auth_callback_telegram,
     "./routes/api/auth/login.ts": $api_auth_login,
     "./routes/api/auth/logout.ts": $api_auth_logout,
     "./routes/api/auth/me.ts": $api_auth_me,

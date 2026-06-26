@@ -9,8 +9,16 @@ export const handler: Handlers = {
     const provider = ctx.params.provider as OAuthProvider;
     
     // Validate provider
-    if (!["google", "facebook", "discord", "twitch"].includes(provider)) {
+    if (!["google", "facebook", "discord", "twitch", "telegram"].includes(provider)) {
       return new Response("Invalid OAuth provider", { status: 400 });
+    }
+    
+    // Telegram uses widget-based auth, not redirect flow
+    if (provider === "telegram") {
+      return Response.json(
+        { ok: false, error: "Telegram authentication uses widget-based flow. Use the Telegram Login Widget on the frontend." },
+        { status: 400 }
+      );
     }
     
     // Check if provider is configured

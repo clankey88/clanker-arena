@@ -49,6 +49,15 @@ export const OAUTH_CONFIGS: Record<OAuthProvider, OAuthConfig | null> = {
     scope: ["user:read:email"],
     redirectUri: `${Deno.env.get("APP_URL") || "http://localhost:8000"}/api/auth/callback/twitch`,
   },
+  telegram: {
+    clientId: Deno.env.get("TELEGRAM_BOT_TOKEN") || "",
+    clientSecret: Deno.env.get("TELEGRAM_BOT_TOKEN") || "", // Telegram uses bot token for both
+    authorizationEndpoint: "https://oauth.telegram.org/auth",
+    tokenEndpoint: "", // Telegram doesn't use token exchange
+    userInfoEndpoint: "", // Telegram sends user data directly
+    scope: [],
+    redirectUri: `${Deno.env.get("APP_URL") || "http://localhost:8000"}/api/auth/callback/telegram`,
+  },
   local: null, // Local authentication doesn't use OAuth
 };
 
@@ -194,9 +203,61 @@ export async function getUserInfo(
         name: user.display_name || user.login,
         avatarUrl: user.profile_image_url,
       };
+    case "telegram":
+      // Telegram data comes directly from widget, not from API
+      throw new Error("Telegram user info should be validated via verifyTelegramAuth");
     default:
       throw new Error(`Unsupported provider: ${provider}`);
   }
+}
+
+// Telegram-specific authentication verification
+export interface TelegramAuthData {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  photo_url?: string;
+  auth_date: number;
+  hash: string;
+}
+
+export function verifyTelegramAuth(authData: TelegramAuthData, botToken: string): boolean {
+  const { hash, ...data } = authData;
+  
+  // Create data check string
+  const dataCheckString = Object.keys(data)
+    .sort()
+    .map(key => `${key}=${data[key as keyof typeof data]}`)
+    .join('\n');
+  
+  // Create secret key from bot token
+  const encoder = new TextEncoder();
+  const secretKey = encoder.encode(botToken);
+  
+  // Calculate hash using HMAC-SHA256
+  return crypto.subtle.importKey(
+    'raw',
+    secretKey,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  ).then(key => 
+    crypto.subtle.sign('HMAC', key, encoder.encode(dataCheckString))
+  ).then(signature => {
+    const computedHash = Array.from(new Uint8Array(signature))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    return computedHash === hash;
+  }).catch(() => false);
+}
+
+export function parseTelegramAuthData(authData: TelegramAuthData): OAuthUserInfo {
+  return {
+    id: authData.id.toString(),
+    name: `${authData.first_name}${authData.last_name ? ' ' + authData.last_name : ''}`,
+    avatarUrl: authData.photo_url,
+  };
 }
 
 export function isOAuthConfigured(provider: OAuthProvider): boolean {
